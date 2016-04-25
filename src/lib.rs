@@ -117,6 +117,34 @@ impl MagickWand {
         value
     }
 
+    /// Retrieve the named wand option value.
+    pub fn get_option(&self, key: &str) -> Option<String> {
+        let c_key = CString::new(key).unwrap();
+        let result = unsafe {
+            bindings::MagickGetOption(self.wand, c_key.as_ptr())
+        };
+        let value = if result.is_null() {
+            None
+        } else {
+            // convert (and copy) the C string to a Rust string
+            let cstr = unsafe { CStr::from_ptr(result) };
+            Some(cstr.to_string_lossy().into_owned())
+        };
+        unsafe {
+            bindings::MagickRelinquishMemory(result as *mut c_void);
+        }
+        value
+    }
+
+    /// Set the named wand option value.
+    pub fn set_option(&self, key: &str, value: &str) {
+        let c_key = CString::new(key).unwrap();
+        let c_value = CString::new(value).unwrap();
+        unsafe {
+            bindings::MagickSetOption(self.wand, c_key.as_ptr(), c_value.as_ptr());
+        }
+    }
+
     /// Resize the image to the specified width and height, using the
     /// specified filter type with the specified blur / sharpness factor.
     ///
